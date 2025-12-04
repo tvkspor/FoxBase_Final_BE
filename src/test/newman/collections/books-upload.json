@@ -1,0 +1,334 @@
+{
+  "info": {
+    "name": "Book Upload Tests",
+    "_postman_id": "books-upload.json",
+    "description": "Test cases for the POST /books/upload using MySQL test database and real Cloudinary uploads. Token is obtained automatically after login.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Pre-request: Reset Database",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{base_url}}/test/reset-database"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Database reset', function() {",
+              "    pm.response.to.have.status(200);",
+              "    pm.expect(pm.response.text()).to.include('Test database reset successfully');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pre-request: Register User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"{{username}}\", \"password\": \"{{password}}\", \"email\": \"{{email}}\", \"fName\": \"Test\", \"lName\": \"User\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Register status 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pre-request: Login User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/auth/token",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"{{username}}\", \"password\": \"{{password}}\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Login success', function() {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('data');",
+              "    pm.expect(jsonData.data).to.have.property('token');",
+              "    // Save token to environment for subsequent requests",
+              "    pm.environment.set('token', jsonData.data.token);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 001: Upload Book - Missing cover file",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{base_url}}/books/upload",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "meta",
+              "type": "text",
+              "value": "{ \"title\": \"Missing Cover\", \"author\": \"Boundary Test\", \"description\": \"No cover image provided.\", \"genre\": \"Test\", \"price\": 49 }"
+            },
+            {
+              "key": "pdf",
+              "type": "file",
+              "src": "src/test/newman/data/book.pdf"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Missing cover - should return 400', function() {",
+              "    pm.response.to.have.status(400);",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.include('Cover image is required');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 002: Upload Book - Missing PDF file",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{base_url}}/books/upload",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "meta",
+              "type": "text",
+              "value": "{ \"title\": \"Missing PDF\", \"author\": \"Boundary Test\", \"description\": \"No PDF file provided.\", \"genre\": \"Test\", \"price\": 49 }"
+            },
+            {
+              "key": "pdf",
+              "type": "file",
+              "src": ""
+            },
+            {
+              "key": "cover",
+              "type": "file",
+              "src": "src/test/newman/data/book-cover.png"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Missing PDF - should return 400', function() {",
+              "    pm.response.to.have.status(400);",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.include('PDF file is required');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 003: Upload Invalid File Type",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{base_url}}/books/upload",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "meta",
+              "type": "text",
+              "value": "{ \"title\": \"Invalid File\", \"author\": \"Format Test\", \"description\": \"Wrong file format.\", \"genre\": \"Test\", \"price\": 10 }"
+            },
+            {
+              "key": "pdf",
+              "type": "file",
+              "src": "src/test/newman/data/invalid-file.txt"
+            },
+            {
+              "key": "cover",
+              "type": "file",
+              "src": "src/test/newman/data/book-cover.png"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Invalid file - should return 400', function() {",
+              "    pm.response.to.have.status(400);",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.include('Unsupported file format');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 004: Upload Oversized File",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{base_url}}/books/upload",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "meta",
+              "type": "text",
+              "value": "{ \"title\": \"Oversized File\", \"author\": \"Boundary Test\", \"description\": \"File exceeds allowed size.\", \"genre\": \"Performance\", \"price\": 30 }"
+            },
+            {
+              "key": "pdf",
+              "type": "file",
+              "src": "src/test/newman/data/oversized-book.pdf"
+            },
+            {
+              "key": "cover",
+              "type": "file",
+              "src": "src/test/newman/data/book-cover.png"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Oversized file - should return 413', function() {",
+              "    pm.response.to.have.status(413);",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.include('File size exceeds 50MB limit');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 005: Upload and Publish Book",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{base_url}}/books/upload",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "meta",
+              "type": "text",
+              "value": "{ \"title\": \"Lorem Ipsum\", \"author\": \"Posuere Lacus\", \"description\": \"Praesent scelerisque malesuada posuere. Duis rutrum elit eu sagittis blandit. Vestibulum molestie, velit at dapibus congue, mauris lacus venenatis felis, nec porta sapien sapien in lorem.\", \"genre\": \"Mauris\", \"price\": 79 }"
+            },
+            {
+              "key": "pdf",
+              "type": "file",
+              "src": "src/test/newman/data/book.pdf"
+            },
+            {
+              "key": "cover",
+              "type": "file",
+              "src": "src/test/newman/data/book-cover.png"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    pm.test('Response has bookId and URLs', function() {",
+              "        pm.expect(jsonData.data).to.have.property('bookId');",
+              "        pm.expect(jsonData.data).to.have.property('contentUrl');",
+              "        pm.expect(jsonData.data).to.have.property('imageUrl');",
+              "    });",
+              "    pm.test('Cloudinary URLs start correctly', function() {",
+              "        pm.expect(jsonData.data.contentUrl.startsWith('https://res.cloudinary.com/dguvtcgzy/')).to.be.true;",
+              "        pm.expect(jsonData.data.imageUrl.startsWith('https://res.cloudinary.com/dguvtcgzy/')).to.be.true;",
+              "    });",
+              "}"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

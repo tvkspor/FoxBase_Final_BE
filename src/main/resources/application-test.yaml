@@ -1,0 +1,40 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/foxbase_test_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: foxbase_test
+    password: test_password
+    hikari:
+      maximum-pool-size: 5
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
+  h2:
+    console:
+      enabled: false
+
+  mail:
+    host: localhost
+    port: 1025
+    username:
+    password:
+
+logging:
+  level:
+    com.be.java.foxbase.service: DEBUG
+
+jwt:
+  secret: "this_is_a_test_secret_key_with_at_least_64_chars_long_1234567890"
+  algorithm: HS512
+  valid-duration: 3600
+  refreshable-duration: 36000
+
+recaptcha:
+  secret: ${RECAPTCHA_SECRET:}

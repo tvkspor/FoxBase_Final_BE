@@ -1,0 +1,639 @@
+{
+  "info": {
+    "name": "User Register Tests",
+    "_postman_id": "users-register.json",
+    "description": "Test cases for the POST /users/register",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Pre-request: Reset Database",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{base_url}}/test/reset-database"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Database reset', function() {",
+              "    pm.response.to.have.status(200);",
+              "    pm.expect(pm.response.text()).to.include('Test database reset successfully');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pre-request: Register User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"existingUser\", \"password\": \"Password1!\", \"email\": \"existingEmail@exmaple.com\", \"fName\": \"Test\", \"lName\": \"User\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Register status 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 001: Valid username: validUser01",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"validUser01\", \"email\": \"validuser01@gmail.com\", \"password\": \"Strong@123\", \"fName\": \"John\", \"lName\": \"Doe\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Should return 200 and success message', function() {",
+              "   pm.response.to.have.status(200);",
+              "   var json = pm.response.json();",
+              "   pm.expect(pm.response.text()).to.include('username');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 002: Invalid username (contains space): bad user",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"bad user\", \"email\": \"validemail@gmail.com\", \"password\": \"Strong@123\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Should return 400 and username format error', function() {",
+              "   pm.response.to.have.status(400);",
+              "   pm.expect(pm.response.text()).to.include('Username');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 003: Invalid username (special characters): user!@#",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"user!@#\", \"email\": \"valid@gmail.com\", \"password\": \"Strong@123\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Should return 400 invalid username format', function() {",
+              "   pm.response.to.have.status(400);",
+              "   pm.expect(pm.response.text()).to.include('Username');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 004: Invalid email (missing domain): validUser02",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"validUser02\", \"email\": \"invalidEmail@domain\", \"password\": \"Strong@123\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Should return 400 invalid email format', function() {",
+              "   pm.response.to.have.status(400);",
+              "   pm.expect(pm.response.text()).to.include('Email');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 005: Invalid password (missing special character): validUser03",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"validUser03\", \"email\": \"valid03@gmail.com\", \"password\": \"WeakPass1\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Should return 400 invalid password format', function() {",
+              "   pm.response.to.have.status(400);",
+              "   pm.expect(pm.response.text()).to.include('Password');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 006: Invalid password (contains space): Strong 123@\\",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"validUser04\", \"email\": \"valid04@gmail.com\", \"password\": \"Strong 123@\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Should return 400 invalid password (space)', function() {",
+              "   pm.response.to.have.status(400);",
+              "   pm.expect(pm.response.text()).to.include('Password');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 007: Invalid username too short (5 chars): short",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"short\", \"email\": \"shortuser@gmail.com\", \"password\": \"Strong@123\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Should return 400 invalid username length', function() {",
+              "   pm.response.to.have.status(400);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 008: Invalid password too long (33 chars): Aa1@abcdefghijklmnopqrstuvwxyzABCDE",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"user33chars\", \"email\": \"validuser33@gmail.com\", \"password\": \"Aa1@abcdefghijklmnopqrstuvwxyzABCDE\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Should return 400 invalid password length', function() {",
+              "   pm.response.to.have.status(400);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 009: Valid email name part min length (6 chars): abcdef@gmail.com",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"boundaryUser\", \"email\": \"abcdef@gmail.com\", \"password\": \"Strong@123\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Should return 200 for valid email (min name length)', function() {",
+              "   pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 010: Invalid username (with accents): nguyễn",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"nguyễn\", \"email\": \"abcdef@gmail.com\", \"password\": \"Strong@123\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Should return 400 for invalid username (with accents)', function() {",
+              "   pm.response.to.have.status(400);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 011: Valid email (with dots): abc.def@test.com",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"user01\", \"email\": \"abc.def@test.com\", \"password\": \"Strong@123\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Should return 200 for valid email (with dots)', function() {",
+              "   pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 012: Invalid email (contain plus character): user+name@example.com",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"user01\", \"email\": \"user+name@example.com\", \"password\": \"Strong@123\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Should return 400 for invalid email (contain plus character)', function() {",
+              "   pm.response.to.have.status(400);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 013: Invalid password (missing lowercase letters): ABC123!@",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"user01\", \"email\": \"username@example.com\", \"password\": \"ABC123!@\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Should return 400 for invalid password (missing lowercase letters)', function() {",
+              "   pm.response.to.have.status(400);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 014: Invalid password (contain tab or newline): Valid1!\n",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"user01\", \"email\": \"user01@example.com\", \"password\": \"Valid1!\n\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Should return 400 for invalid password (contain tab or newline)', function() {",
+              "   pm.response.to.have.status(400);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 015: Duplicate username",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"existingUser\", \"email\": \"user01@example.com\", \"password\": \"Valid1@password\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Duplicate username - should return 400', function () {",
+              "    pm.response.to.have.status(400);",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.message).to.include('User existed');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 016: Duplicate email",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"user03\", \"email\": \"existingEmail@exmaple.com\", \"password\": \"Valid1@password\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Duplicate email - should return 400', function () {",
+              "    pm.response.to.have.status(400);",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.message).to.include('Email already used');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 017: SQL Injection: injection' OR '1'='1",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"injection' OR '1'='1\", \"email\": \"user01@example.com\", \"password\": \"Aa1@abc\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Response is not 500', function() { pm.expect(pm.response.code).not.eql(500); });",
+              "pm.test('No SQL/stacktrace keywords leaked', function() {",
+              "    var txt = pm.response.text().toLowerCase();",
+              "    pm.expect(txt).not.include('sql');",
+              "    pm.expect(txt).not.include('syntax');",
+              "    pm.expect(txt).not.include('exception');",
+              "    pm.expect(txt).not.include('stacktrace');",
+              "    pm.expect(txt).not.include('ora-');",
+              "    pm.expect(txt).not.include('mysql');",
+              "});",
+              "pm.test('Create should NOT succeed', function() {",
+              "    pm.expect(pm.response.code === 200 || pm.response.code === 201).to.be.false;",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 018: SQL Injection: '; DROP TABLE users; --",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"'; DROP TABLE users; --\", \"email\": \"drop@example.com\", \"password\": \"Aa1@abc\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Response is not 500', function() { pm.expect(pm.response.code).not.eql(500); });",
+              "pm.test('No SQL keywords leaked', function() {",
+              "    var txt = pm.response.text().toLowerCase();",
+              "    pm.expect(txt).not.include('drop table');",
+              "    pm.expect(txt).not.include('syntax');",
+              "    pm.expect(txt).not.include('sql');",
+              "});",
+              "pm.test('Create should NOT succeed', function() {",
+              "    pm.expect(pm.response.code === 200 || pm.response.code === 201).to.be.false;",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 018: SQL Injection: test' OR '1'='1'@example.com",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"safeuser01\", \"email\": \"test' OR '1'='1'@example.com\", \"password\": \"Aa1@abc\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Response is not 500', function() { pm.expect(pm.response.code).not.eql(500); });",
+              "pm.test('No SQL leak', function() { pm.expect(pm.response.text().toLowerCase()).not.include('sql'); });",
+              "pm.test('Create should reject invalid email', function() { pm.expect(pm.response.code === 200 || pm.response.code === 201).to.be.false; });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

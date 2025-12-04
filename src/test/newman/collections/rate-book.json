@@ -1,0 +1,302 @@
+{
+  "info": {
+    "name": "Rate Book Tests",
+    "_postman_id": "rate-book.json",
+    "description": "Test cases for the POST /ratings/rate using MySQL test database and real Cloudinary uploads. Token is obtained automatically after login.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Pre-request: Reset Database",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{base_url}}/test/reset-database"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Database reset', function() {",
+              "    pm.response.to.have.status(200);",
+              "    pm.expect(pm.response.text()).to.include('Test database reset successfully');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pre-request: Register User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"{{username}}\", \"password\": \"{{password}}\", \"email\": \"{{email}}\", \"fName\": \"Test\", \"lName\": \"User\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Register status 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pre-request: Login User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/auth/token",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"username\": \"{{username}}\", \"password\": \"{{password}}\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Login success', function() {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('data');",
+              "    pm.expect(jsonData.data).to.have.property('token');",
+              "    // Save token to environment for subsequent requests",
+              "    pm.environment.set('token', jsonData.data.token);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pre-request: Upload and Publish Book",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{base_url}}/books/upload",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "meta",
+              "type": "text",
+              "value": "{ \"title\": \"Lorem Ipsum\", \"author\": \"Posuere Lacus\", \"description\": \"Praesent scelerisque malesuada posuere. Duis rutrum elit eu sagittis blandit. Vestibulum molestie, velit at dapibus congue, mauris lacus venenatis felis, nec porta sapien sapien in lorem.\", \"genre\": \"Mauris\", \"price\": 79 }"
+            },
+            {
+              "key": "pdf",
+              "type": "file",
+              "src": "src/test/newman/data/book.pdf"
+            },
+            {
+              "key": "cover",
+              "type": "file",
+              "src": "src/test/newman/data/book-cover.png"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    pm.environment.set('bookId', jsonData.data.bookId);",
+              "    pm.test('Response has bookId and URLs', function() {",
+              "        pm.expect(jsonData.data).to.have.property('bookId');",
+              "        pm.expect(jsonData.data).to.have.property('contentUrl');",
+              "        pm.expect(jsonData.data).to.have.property('imageUrl');",
+              "    });",
+              "    pm.test('Cloudinary URLs start correctly', function() {",
+              "        pm.expect(jsonData.data.contentUrl.startsWith('https://res.cloudinary.com/dguvtcgzy/')).to.be.true;",
+              "        pm.expect(jsonData.data.imageUrl.startsWith('https://res.cloudinary.com/dguvtcgzy/')).to.be.true;",
+              "    });",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 001: Valid Rate and Comment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{base_url}}/ratings/rate",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"ratedBookId\": {{bookId}}, \"rate\": 4.5, \"comment\": \"Great book!\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Response has data', function() {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data).to.have.property('rate');",
+              "    pm.expect(jsonData.data.rate).to.eql(4.5);",
+              "    pm.expect(jsonData.data).to.have.property('comment');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 002: Rate Below 0",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{base_url}}/ratings/rate",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"ratedBookId\": {{bookId}}, \"rate\": -1, \"comment\": \"Invalid rate\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 400 or custom error', function() {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "pm.test('Error message mentions rate', function() {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.include('Rate must be between 0 and 5');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 003: Rate Above 5",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{base_url}}/ratings/rate",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"ratedBookId\": {{bookId}}, \"rate\": 6, \"comment\": \"Invalid rate\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 400 or custom error', function() {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "pm.test('Error message mentions rate', function() {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.include('Rate must be between 0 and 5');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test 004: Comment Too Long",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{base_url}}/ratings/rate",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"ratedBookId\": {{bookId}}, \"rate\": 4, \"comment\": \"Sed sed odio quis lorem interdum pharetra. In hac habitasse platea dictumst. In ac vulputate vivamus.\" }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 400 or custom error', function() {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "pm.test('Error message mentions comment length', function() {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.include('Comment must be at most 100 characters');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

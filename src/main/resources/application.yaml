@@ -1,0 +1,68 @@
+server:
+    port: 8080
+    servlet:
+        context-path: /foxbase-be
+    tomcat:
+        max-swallow-size: -1
+        max-http-form-post-size: -1
+
+spring:
+    servlet:
+        multipart:
+            max-file-size: 100MB
+            max-request-size: 100MB
+    config:
+        import: optional:file:.env[.properties]
+    datasource:
+        url: ${MYSQL_URI}
+        username: ${MYSQL_USERNAME}
+        password: ${MYSQL_ROOT_PASSWORD}
+    jpa:
+        hibernate:
+            ddl-auto: update
+        show-sql: true
+    security:
+        oauth2:
+            client:
+                registration:
+                      google:
+                          client-id: ${GOOGLE_CLIENT_ID}
+                          client-secret: ${GOOGLE_CLIENT_SECRET}
+                          scope:
+                            - openid
+                            - email
+                            - profile
+                provider:
+                    google:
+                        authorization-uri: https://accounts.google.com/o/oauth2/auth
+                        token-uri: https://oauth2.googleapis.com/token
+    mail:
+        port: 587
+        host: smtp.gmail.com
+        username: ${APP_EMAIL}
+        password: ${APP_PASSWORD}
+        properties:
+          mail:
+              smtp:
+                  auth: true
+                  starttls:
+                      enable: true
+
+jwt:
+    signerKey: ${SIGNER_KEY}
+    valid-duration: 3600 # in second
+    refreshable-duration: 36000 # in seconds
+
+client:
+    domain: ${CLIENT_DOMAIN}
+
+zalopay:
+  app-id: ${ZALOPAY_APP_ID:554}
+  key1: ${ZALOPAY_KEY1:8NdU5pG5R2spGHGhyO99HN1OhD8IQJBn}
+  key2: ${ZALOPAY_KEY2:}
+  sandbox: ${ZALOPAY_SANDBOX:true}
+  webhook:
+    allowed-ips: ${ZALOPAY_WEBHOOK_ALLOWED_IPS:}
+
+recaptcha:
+    secret: ${RECAPTCHA_SECRET:}
